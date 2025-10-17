@@ -2,6 +2,8 @@ package com.example.U5_W6_D5.service;
 
 import com.example.U5_W6_D5.entity.StatoViaggio;
 import com.example.U5_W6_D5.entity.Viaggio;
+import com.example.U5_W6_D5.exception.BadRequestException;
+import com.example.U5_W6_D5.exception.ResourceNotFoundException;
 import com.example.U5_W6_D5.repository.ViaggioRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -20,10 +22,10 @@ public class ViaggioService {
     public Viaggio createViaggio(Viaggio viaggio) {
         // Validazione base
         if (viaggio.getData() == null) {
-            throw new IllegalArgumentException("La data del viaggio è obbligatoria");
+            throw new BadRequestException("La data del viaggio è obbligatoria");
         }
         if (viaggio.getDestinazione() == null || viaggio.getDestinazione().isEmpty()) {
-            throw new IllegalArgumentException("La destinazione è obbligatoria");
+            throw new BadRequestException("La destinazione è obbligatoria");
         }
         if (viaggio.getStato() == null) {
             viaggio.setStato(StatoViaggio.IN_PROGRAMMA); // Stato predefinito
@@ -71,7 +73,7 @@ public class ViaggioService {
 
                     return viaggioRepository.save(viaggio);
                 })
-                .orElseThrow(() -> new RuntimeException("Viaggio non trovato con ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Viaggio", id));
     }
 
     // UPDATE - Aggiorna parzialmente un viaggio
@@ -90,7 +92,7 @@ public class ViaggioService {
 
                     return viaggioRepository.save(viaggio);
                 })
-                .orElseThrow(() -> new RuntimeException("Viaggio non trovato con ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Viaggio", id));
     }
 
     // UPDATE - Aggiorna solo lo stato del viaggio
@@ -100,13 +102,13 @@ public class ViaggioService {
                     viaggio.setStato(nuovoStato);
                     return viaggioRepository.save(viaggio);
                 })
-                .orElseThrow(() -> new RuntimeException("Viaggio non trovato con ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Viaggio", id));
     }
 
     // DELETE - Elimina un viaggio per ID
     public void deleteViaggio(Long id) {
         if (!viaggioRepository.existsById(id)) {
-            throw new RuntimeException("Viaggio non trovato con ID: " + id);
+            throw new ResourceNotFoundException("Viaggio", id);
         }
         viaggioRepository.deleteById(id);
     }
@@ -116,4 +118,3 @@ public class ViaggioService {
         return viaggioRepository.existsById(id);
     }
 }
-

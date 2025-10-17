@@ -1,41 +1,32 @@
-package com.example.U5_W6_D5.entity;
+package com.example.U5_W6_D5.dto;
 
-import jakarta.persistence.*;
+import com.example.U5_W6_D5.entity.StatoViaggio;
 import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import lombok.Getter;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
-import lombok.ToString;
 
 import java.time.LocalDate;
 
-@Entity
-@Table(name = "viaggi")
-@Getter
-@Setter
+/**
+ * DTO per la creazione/aggiornamento di un viaggio
+ */
+@Data
 @NoArgsConstructor
-@ToString
-public class Viaggio {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+@AllArgsConstructor
+public class ViaggioRequestDTO {
 
     @NotBlank(message = "La destinazione è obbligatoria")
     @Size(min = 2, max = 200, message = "La destinazione deve essere tra 2 e 200 caratteri")
-    @Column(nullable = false)
     private String destinazione;
 
     @NotNull(message = "La data è obbligatoria")
     @FutureOrPresent(message = "La data del viaggio non può essere nel passato")
-    @Column(nullable = false)
     private LocalDate data;
 
     @NotNull(message = "Lo stato del viaggio è obbligatorio")
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
     private StatoViaggio stato;
 }

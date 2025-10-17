@@ -1,6 +1,7 @@
 package com.example.U5_W6_D5.dto;
 
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -19,6 +20,6 @@ public class PrenotazioneRequestDTO {
     @NotNull(message = "L'ID del viaggio è obbligatorio")
     private Long viaggioId;
 
+    @Size(max = 1000, message = "Le note non possono superare i 1000 caratteri")
     private String notePreferenze;
 }
-

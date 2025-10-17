@@ -1,7 +1,9 @@
 package com.example.U5_W6_D5.controller;
 
 import com.example.U5_W6_D5.entity.Dipendente;
+import com.example.U5_W6_D5.exception.ResourceNotFoundException;
 import com.example.U5_W6_D5.service.DipendenteService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -37,13 +39,9 @@ public class DipendenteController {
      * POST /api/dipendenti
      */
     @PostMapping
-    public ResponseEntity<Dipendente> createDipendente(@RequestBody Dipendente dipendente) {
-        try {
-            Dipendente nuovoDipendente = dipendenteService.createDipendente(dipendente);
-            return new ResponseEntity<>(nuovoDipendente, HttpStatus.CREATED);
-        } catch (IllegalArgumentException e) {
-            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
-        }
+    public ResponseEntity<Dipendente> createDipendente(@Valid @RequestBody Dipendente dipendente) {
+        Dipendente nuovoDipendente = dipendenteService.createDipendente(dipendente);
+        return new ResponseEntity<>(nuovoDipendente, HttpStatus.CREATED);
     }
 
     /**
@@ -62,9 +60,9 @@ public class DipendenteController {
      */
     @GetMapping("/{id}")
     public ResponseEntity<Dipendente> getDipendenteById(@PathVariable Long id) {
-        return dipendenteService.getDipendenteById(id)
-                .map(dipendente -> new ResponseEntity<>(dipendente, HttpStatus.OK))
-                .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
+        Dipendente dipendente = dipendenteService.getDipendenteById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Dipendente", id));
+        return ResponseEntity.ok(dipendente);
     }
 
     /**
@@ -73,9 +71,9 @@ public class DipendenteController {
      */
     @GetMapping("/username/{username}")
     public ResponseEntity<Dipendente> getDipendenteByUsername(@PathVariable String username) {
-        return dipendenteService.getDipendenteByUsername(username)
-                .map(dipendente -> new ResponseEntity<>(dipendente, HttpStatus.OK))
-                .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
+        Dipendente dipendente = dipendenteService.getDipendenteByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("Dipendente", "username", username));
+        return ResponseEntity.ok(dipendente);
     }
 
     /**
@@ -85,16 +83,9 @@ public class DipendenteController {
     @PutMapping("/{id}")
     public ResponseEntity<Dipendente> updateDipendente(
             @PathVariable Long id,
-            @RequestBody Dipendente dipendente) {
-        try {
-            Dipendente dipendenteAggiornato = dipendenteService.updateDipendente(id, dipendente);
-            return new ResponseEntity<>(dipendenteAggiornato, HttpStatus.OK);
-        } catch (RuntimeException e) {
-            if (e instanceof IllegalArgumentException) {
-                return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
-            }
-            return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
-        }
+            @Valid @RequestBody Dipendente dipendente) {
+        Dipendente dipendenteAggiornato = dipendenteService.updateDipendente(id, dipendente);
+        return ResponseEntity.ok(dipendenteAggiornato);
     }
 
     /**
@@ -105,15 +96,8 @@ public class DipendenteController {
     public ResponseEntity<Dipendente> patchDipendente(
             @PathVariable Long id,
             @RequestBody Dipendente dipendente) {
-        try {
-            Dipendente dipendenteAggiornato = dipendenteService.patchDipendente(id, dipendente);
-            return new ResponseEntity<>(dipendenteAggiornato, HttpStatus.OK);
-        } catch (RuntimeException e) {
-            if (e instanceof IllegalArgumentException) {
-                return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
-            }
-            return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
-        }
+        Dipendente dipendenteAggiornato = dipendenteService.patchDipendente(id, dipendente);
+        return ResponseEntity.ok(dipendenteAggiornato);
     }
 
     /**
@@ -122,14 +106,10 @@ public class DipendenteController {
      */
     @DeleteMapping("/{id}")
     public ResponseEntity<Map<String, String>> deleteDipendente(@PathVariable Long id) {
-        try {
-            dipendenteService.deleteDipendente(id);
-            Map<String, String> response = new HashMap<>();
-            response.put("message", "Dipendente eliminato con successo");
-            return new ResponseEntity<>(response, HttpStatus.OK);
-        } catch (RuntimeException e) {
-            return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
-        }
+        dipendenteService.deleteDipendente(id);
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "Dipendente eliminato con successo");
+        return ResponseEntity.ok(response);
     }
 
     /**

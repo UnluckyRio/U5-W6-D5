@@ -3,6 +3,9 @@ package com.example.U5_W6_D5.service;
 import com.example.U5_W6_D5.entity.Dipendente;
 import com.example.U5_W6_D5.entity.Prenotazione;
 import com.example.U5_W6_D5.entity.Viaggio;
+import com.example.U5_W6_D5.exception.BadRequestException;
+import com.example.U5_W6_D5.exception.ConflictException;
+import com.example.U5_W6_D5.exception.ResourceNotFoundException;
 import com.example.U5_W6_D5.repository.DipendenteRepository;
 import com.example.U5_W6_D5.repository.PrenotazioneRepository;
 import com.example.U5_W6_D5.repository.ViaggioRepository;
@@ -42,16 +45,16 @@ public class PrenotazioneService {
     public Prenotazione createPrenotazione(Long dipendenteId, Long viaggioId, String notePreferenze) {
         // Validazione input
         if (dipendenteId == null || viaggioId == null) {
-            throw new IllegalArgumentException("ID dipendente e ID viaggio sono obbligatori");
+            throw new BadRequestException("ID dipendente e ID viaggio sono obbligatori");
         }
 
         // Recupera il dipendente
         Dipendente dipendente = dipendenteRepository.findById(dipendenteId)
-                .orElseThrow(() -> new RuntimeException("Dipendente non trovato con ID: " + dipendenteId));
+                .orElseThrow(() -> new ResourceNotFoundException("Dipendente", dipendenteId));
 
         // Recupera il viaggio
         Viaggio viaggio = viaggioRepository.findById(viaggioId)
-                .orElseThrow(() -> new RuntimeException("Viaggio non trovato con ID: " + viaggioId));
+                .orElseThrow(() -> new ResourceNotFoundException("Viaggio", viaggioId));
 
         // VALIDAZIONE SOVRAPPOSIZIONE: Verifica che il dipendente non abbia altre prenotazioni per la stessa data
         LocalDate dataViaggio = viaggio.getData();
@@ -59,7 +62,7 @@ public class PrenotazioneService {
                 .findByDipendenteIdAndViaggioData(dipendenteId, dataViaggio);
 
         if (!prenotazioniEsistenti.isEmpty()) {
-            throw new IllegalStateException(
+            throw new ConflictException(
                     String.format("Il dipendente %s %s ha già una prenotazione per la data %s",
                             dipendente.getNome(), dipendente.getCognome(), dataViaggio)
             );
@@ -88,13 +91,13 @@ public class PrenotazioneService {
     public Prenotazione createPrenotazione(Prenotazione prenotazione) {
         // Validazione input
         if (prenotazione == null) {
-            throw new IllegalArgumentException("La prenotazione non può essere null");
+            throw new BadRequestException("La prenotazione non può essere null");
         }
         if (prenotazione.getDipendente() == null || prenotazione.getDipendente().getId() == null) {
-            throw new IllegalArgumentException("Il dipendente è obbligatorio");
+            throw new BadRequestException("Il dipendente è obbligatorio");
         }
         if (prenotazione.getViaggio() == null || prenotazione.getViaggio().getId() == null) {
-            throw new IllegalArgumentException("Il viaggio è obbligatorio");
+            throw new BadRequestException("Il viaggio è obbligatorio");
         }
 
         Long dipendenteId = prenotazione.getDipendente().getId();
@@ -102,10 +105,10 @@ public class PrenotazioneService {
 
         // Verifica che dipendente e viaggio esistano
         Dipendente dipendente = dipendenteRepository.findById(dipendenteId)
-                .orElseThrow(() -> new RuntimeException("Dipendente non trovato con ID: " + dipendenteId));
+                .orElseThrow(() -> new ResourceNotFoundException("Dipendente", dipendenteId));
 
         Viaggio viaggio = viaggioRepository.findById(viaggioId)
-                .orElseThrow(() -> new RuntimeException("Viaggio non trovato con ID: " + viaggioId));
+                .orElseThrow(() -> new ResourceNotFoundException("Viaggio", viaggioId));
 
         // VALIDAZIONE SOVRAPPOSIZIONE
         LocalDate dataViaggio = viaggio.getData();
@@ -113,7 +116,7 @@ public class PrenotazioneService {
                 .findByDipendenteIdAndViaggioData(dipendenteId, dataViaggio);
 
         if (!prenotazioniEsistenti.isEmpty()) {
-            throw new IllegalStateException(
+            throw new ConflictException(
                     String.format("Il dipendente %s %s ha già una prenotazione per la data %s",
                             dipendente.getNome(), dipendente.getCognome(), dataViaggio)
             );
@@ -225,4 +228,3 @@ public class PrenotazioneService {
         return prenotazioneRepository.existsById(id);
     }
 }
-

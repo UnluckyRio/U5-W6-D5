@@ -1,6 +1,8 @@
 package com.example.U5_W6_D5.service;
 
 import com.example.U5_W6_D5.entity.Dipendente;
+import com.example.U5_W6_D5.exception.ConflictException;
+import com.example.U5_W6_D5.exception.ResourceNotFoundException;
 import com.example.U5_W6_D5.repository.DipendenteRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -18,10 +20,10 @@ public class DipendenteService {
     public Dipendente createDipendente(Dipendente dipendente) {
         // Verifica che username ed email non siano già utilizzati
         if (dipendenteRepository.existsByUsername(dipendente.getUsername())) {
-            throw new IllegalArgumentException("Username già esistente: " + dipendente.getUsername());
+            throw new ConflictException("Username già esistente: " + dipendente.getUsername());
         }
         if (dipendenteRepository.existsByEmail(dipendente.getEmail())) {
-            throw new IllegalArgumentException("Email già esistente: " + dipendente.getEmail());
+            throw new ConflictException("Email già esistente: " + dipendente.getEmail());
         }
         return dipendenteRepository.save(dipendente);
     }
@@ -53,12 +55,12 @@ public class DipendenteService {
                     // Verifica che il nuovo username non sia già utilizzato da un altro dipendente
                     if (!dipendente.getUsername().equals(dipendenteAggiornato.getUsername()) &&
                             dipendenteRepository.existsByUsername(dipendenteAggiornato.getUsername())) {
-                        throw new IllegalArgumentException("Username già esistente: " + dipendenteAggiornato.getUsername());
+                        throw new ConflictException("Username già esistente: " + dipendenteAggiornato.getUsername());
                     }
                     // Verifica che la nuova email non sia già utilizzata da un altro dipendente
                     if (!dipendente.getEmail().equals(dipendenteAggiornato.getEmail()) &&
                             dipendenteRepository.existsByEmail(dipendenteAggiornato.getEmail())) {
-                        throw new IllegalArgumentException("Email già esistente: " + dipendenteAggiornato.getEmail());
+                        throw new ConflictException("Email già esistente: " + dipendenteAggiornato.getEmail());
                     }
 
                     dipendente.setUsername(dipendenteAggiornato.getUsername());
@@ -69,7 +71,7 @@ public class DipendenteService {
 
                     return dipendenteRepository.save(dipendente);
                 })
-                .orElseThrow(() -> new RuntimeException("Dipendente non trovato con ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Dipendente", id));
     }
 
     // UPDATE - Aggiorna parzialmente un dipendente
@@ -79,7 +81,7 @@ public class DipendenteService {
                     if (dipendenteAggiornato.getUsername() != null) {
                         if (!dipendente.getUsername().equals(dipendenteAggiornato.getUsername()) &&
                                 dipendenteRepository.existsByUsername(dipendenteAggiornato.getUsername())) {
-                            throw new IllegalArgumentException("Username già esistente: " + dipendenteAggiornato.getUsername());
+                            throw new ConflictException("Username già esistente: " + dipendenteAggiornato.getUsername());
                         }
                         dipendente.setUsername(dipendenteAggiornato.getUsername());
                     }
@@ -92,7 +94,7 @@ public class DipendenteService {
                     if (dipendenteAggiornato.getEmail() != null) {
                         if (!dipendente.getEmail().equals(dipendenteAggiornato.getEmail()) &&
                                 dipendenteRepository.existsByEmail(dipendenteAggiornato.getEmail())) {
-                            throw new IllegalArgumentException("Email già esistente: " + dipendenteAggiornato.getEmail());
+                            throw new ConflictException("Email già esistente: " + dipendenteAggiornato.getEmail());
                         }
                         dipendente.setEmail(dipendenteAggiornato.getEmail());
                     }
@@ -102,13 +104,13 @@ public class DipendenteService {
 
                     return dipendenteRepository.save(dipendente);
                 })
-                .orElseThrow(() -> new RuntimeException("Dipendente non trovato con ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Dipendente", id));
     }
 
     // DELETE - Elimina un dipendente per ID
     public void deleteDipendente(Long id) {
         if (!dipendenteRepository.existsById(id)) {
-            throw new RuntimeException("Dipendente non trovato con ID: " + id);
+            throw new ResourceNotFoundException("Dipendente", id);
         }
         dipendenteRepository.deleteById(id);
     }
@@ -118,4 +120,3 @@ public class DipendenteService {
         return dipendenteRepository.existsById(id);
     }
 }
-
