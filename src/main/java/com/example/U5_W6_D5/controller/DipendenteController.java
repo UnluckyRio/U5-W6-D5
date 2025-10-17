@@ -5,21 +5,15 @@ import com.example.U5_W6_D5.exception.ResourceNotFoundException;
 import com.example.U5_W6_D5.service.DipendenteService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 /**
  * Controller REST per la gestione dei dipendenti
@@ -30,9 +24,6 @@ public class DipendenteController {
 
     @Autowired
     private DipendenteService dipendenteService;
-
-    @Value("${upload.path:uploads/dipendenti}")
-    private String uploadPath;
 
     /**
      * CREATE - Crea un nuovo dipendente
@@ -113,7 +104,7 @@ public class DipendenteController {
     }
 
     /**
-     * UPLOAD - Carica un'immagine profilo per un dipendente
+     * UPLOAD - Carica un'immagine profilo per un dipendente su Cloudinary
      * POST /api/dipendenti/{id}/uploadImage
      */
     @PostMapping("/{id}/uploadImage")
@@ -124,57 +115,25 @@ public class DipendenteController {
         Map<String, String> response = new HashMap<>();
 
         try {
-            // Verifica che il dipendente esista
-            Dipendente dipendente = dipendenteService.getDipendenteById(id)
-                    .orElseThrow(() -> new RuntimeException("Dipendente non trovato con ID: " + id));
+            // Carica l'immagine su Cloudinary e aggiorna il dipendente
+            Dipendente dipendenteAggiornato = dipendenteService.updateImmagineProfilo(id, file);
 
-            // Validazione del file
-            if (file.isEmpty()) {
-                response.put("error", "Il file è vuoto");
-                return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
-            }
-
-            // Verifica che sia un'immagine
-            String contentType = file.getContentType();
-            if (contentType == null || !contentType.startsWith("image/")) {
-                response.put("error", "Il file deve essere un'immagine");
-                return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
-            }
-
-            // Crea la directory se non esiste
-            Path uploadDir = Paths.get(uploadPath);
-            if (!Files.exists(uploadDir)) {
-                Files.createDirectories(uploadDir);
-            }
-
-            // Genera un nome file univoco
-            String originalFilename = file.getOriginalFilename();
-            String fileExtension = "";
-            if (originalFilename != null && originalFilename.contains(".")) {
-                fileExtension = originalFilename.substring(originalFilename.lastIndexOf("."));
-            }
-            String filename = "dipendente_" + id + "_" + UUID.randomUUID().toString() + fileExtension;
-
-            // Salva il file
-            Path filePath = uploadDir.resolve(filename);
-            Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
-
-            // Aggiorna il percorso dell'immagine nel database
-            String imagePath = uploadPath + "/" + filename;
-            dipendente.setImmagineProfiloPath(imagePath);
-            dipendenteService.patchDipendente(id, dipendente);
-
-            response.put("message", "Immagine caricata con successo");
-            response.put("filename", filename);
-            response.put("path", imagePath);
+            response.put("message", "Immagine caricata con successo su Cloudinary");
+            response.put("imageUrl", dipendenteAggiornato.getImmagineProfiloPath());
 
             return new ResponseEntity<>(response, HttpStatus.OK);
 
-        } catch (RuntimeException e) {
+        } catch (ResourceNotFoundException e) {
             response.put("error", e.getMessage());
             return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+        } catch (IllegalArgumentException e) {
+            response.put("error", e.getMessage());
+            return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
         } catch (IOException e) {
-            response.put("error", "Errore durante il salvataggio del file: " + e.getMessage());
+            response.put("error", "Errore durante l'upload dell'immagine: " + e.getMessage());
+            return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+        } catch (RuntimeException e) {
+            response.put("error", e.getMessage());
             return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }

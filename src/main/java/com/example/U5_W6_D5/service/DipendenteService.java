@@ -6,7 +6,9 @@ import com.example.U5_W6_D5.exception.ResourceNotFoundException;
 import com.example.U5_W6_D5.repository.DipendenteRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
@@ -15,6 +17,9 @@ public class DipendenteService {
 
     @Autowired
     private DipendenteRepository dipendenteRepository;
+
+    @Autowired
+    private CloudinaryService cloudinaryService;
 
     // CREATE - Crea un nuovo dipendente
     public Dipendente createDipendente(Dipendente dipendente) {
@@ -107,11 +112,45 @@ public class DipendenteService {
                 .orElseThrow(() -> new ResourceNotFoundException("Dipendente", id));
     }
 
+    // UPDATE - Aggiorna l'immagine profilo di un dipendente
+    public Dipendente updateImmagineProfilo(Long id, MultipartFile file) throws IOException {
+        return dipendenteRepository.findById(id)
+                .map(dipendente -> {
+                    try {
+                        // Elimina la vecchia immagine se esiste
+                        if (dipendente.getImmagineProfiloPath() != null && !dipendente.getImmagineProfiloPath().isEmpty()) {
+                            cloudinaryService.deleteImage(dipendente.getImmagineProfiloPath());
+                        }
+
+                        // Carica la nuova immagine
+                        String imageUrl = cloudinaryService.uploadImage(file);
+                        dipendente.setImmagineProfiloPath(imageUrl);
+
+                        return dipendenteRepository.save(dipendente);
+                    } catch (IOException e) {
+                        throw new RuntimeException("Errore durante l'upload dell'immagine: " + e.getMessage());
+                    }
+                })
+                .orElseThrow(() -> new ResourceNotFoundException("Dipendente", id));
+    }
+
     // DELETE - Elimina un dipendente per ID
     public void deleteDipendente(Long id) {
         if (!dipendenteRepository.existsById(id)) {
             throw new ResourceNotFoundException("Dipendente", id);
         }
+
+        // Elimina l'immagine da Cloudinary se esiste
+        dipendenteRepository.findById(id).ifPresent(dipendente -> {
+            if (dipendente.getImmagineProfiloPath() != null && !dipendente.getImmagineProfiloPath().isEmpty()) {
+                try {
+                    cloudinaryService.deleteImage(dipendente.getImmagineProfiloPath());
+                } catch (IOException e) {
+                    System.err.println("Errore durante l'eliminazione dell'immagine: " + e.getMessage());
+                }
+            }
+        });
+
         dipendenteRepository.deleteById(id);
     }
 
